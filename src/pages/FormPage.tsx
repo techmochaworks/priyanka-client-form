@@ -1,28 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { FormData } from '@/types/form';
 import { ProgressBar } from '@/components/ProgressBar';
 import { FormNavigation } from '@/components/FormNavigation';
 import { PersonalInfoStep } from '@/components/steps/PersonalInfoStep';
 import { DocumentsStep } from '@/components/steps/DocumentsStep';
-import { PaymentRatesStep } from '@/components/steps/PaymentRatesStep';
 import { CreditCardsStep } from '@/components/steps/CreditCardsStep';
 import { ReviewStep } from '@/components/steps/ReviewStep';
 import {
   validateMobile,
-  validateAadhaar,
-  validatePAN,
-  validateCardNumber,
-  validateCVV,
-  validateExpiry,
+  
 } from '@/lib/validation';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 4;
 const STORAGE_KEY = 'client_form_data';
 
 export default function FormPage() {
@@ -112,58 +106,16 @@ export default function FormPage() {
         break;
 
       case 2: // Documents
-        if (!formData.aadhaar) {
-          newErrors.aadhaar = 'Aadhaar number is required';
-        } else if (!validateAadhaar(formData.aadhaar)) {
-          newErrors.aadhaar = 'Invalid Aadhaar number (12 digits required)';
-        }
-        if (!formData.pan) {
-          newErrors.pan = 'PAN number is required';
-        } else if (!validatePAN(formData.pan)) {
-          newErrors.pan = 'Invalid PAN format';
-        }
+       
         break;
-
-      case 3: // Payment Rates
-        if (!formData.billPaymentRate) {
-          newErrors.billPaymentRate = 'Bill payment rate is required';
-        } else if (formData.billPaymentRate <= 0) {
-          newErrors.billPaymentRate = 'Rate must be greater than 0';
-        }
-        if (!formData.payoutRate) {
-          newErrors.payoutRate = 'Payout rate is required';
-        } else if (formData.payoutRate <= 0) {
-          newErrors.payoutRate = 'Rate must be greater than 0';
-        }
-        if (!formData.preferredPaymentMethod) {
-          newErrors.preferredPaymentMethod = 'Payment method is required';
-        }
-        break;
-
-      case 4: // Credit Cards
+     
+      case 3: // Credit Cards
         if (!formData.creditCards || formData.creditCards.length === 0) {
           newErrors.creditCards = 'At least one credit card is required';
-        } else {
-          const hasInvalidCard = formData.creditCards.some(card => {
-            return (
-              !card.cardNumber ||
-              !validateCardNumber(card.cardNumber) ||
-              !card.cvv ||
-              !validateCVV(card.cvv, card.cardType) ||
-              !card.expiryDate ||
-              !validateExpiry(card.expiryDate) ||
-              !card.cardLimit ||
-              card.cardLimit <= 0 ||
-              !card.bankName
-            );
-          });
-          if (hasInvalidCard) {
-            newErrors.creditCards = 'Please fill all card details correctly';
-          }
-        }
+        } 
         break;
 
-      case 5: // Review
+      case 4: // Review
         if (!confirmed) {
           toast.error('Please confirm that your information is accurate');
           return false;
@@ -178,6 +130,7 @@ export default function FormPage() {
   const handleNext = async () => {
     if (!validateStep(currentStep)) {
       toast.error('Please fix the errors before proceeding');
+      console.error('Validation errors:', errors);
       return;
     }
 
@@ -199,35 +152,12 @@ export default function FormPage() {
     window.scrollTo(0, 0);
   };
 
-  const uploadFile = async (file: File, path: string): Promise<string> => {
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
-  };
-
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      // Upload images if present
-      let aadhaarUrl = '';
-      let panUrl = '';
       const clientId = `CLIENT-${Date.now()}`;
 
-      if (formData.aadhaarImage) {
-        aadhaarUrl = await uploadFile(
-          formData.aadhaarImage,
-          `clients/${clientId}/documents/aadhaar.jpg`
-        );
-      }
-
-      if (formData.panImage) {
-        panUrl = await uploadFile(
-          formData.panImage,
-          `clients/${clientId}/documents/pan.jpg`
-        );
-      }
-
-      // Create client document
+      // Create client document with image URLs from Cloudinary
       const clientData = {
         distributorId: distributorId!,
         name: formData.name,
@@ -235,13 +165,8 @@ export default function FormPage() {
         email: formData.email || '',
         dateOfBirth: formData.dateOfBirth || '',
         address: formData.address || '',
-        aadhaar: formData.aadhaar?.replace(/\D/g, ''),
-        pan: formData.pan?.toUpperCase(),
-        aadhaarImageUrl: aadhaarUrl,
-        panImageUrl: panUrl,
-        billPaymentRate: formData.billPaymentRate,
-        payoutRate: formData.payoutRate,
-        preferredPaymentMethod: formData.preferredPaymentMethod,
+        aadhaarImageUrl: formData.aadhaarImageUrl || '', // Cloudinary URL
+        panImageUrl: formData.panImageUrl || '', // Cloudinary URL
         creditCards: formData.creditCards?.map(card => ({
           ...card,
           cardNumber: card.cardNumber.replace(/\D/g, ''),
@@ -261,6 +186,7 @@ export default function FormPage() {
     } catch (error) {
       console.error('Error submitting form:', error);
       toast.error('Failed to submit form. Please try again.');
+      console.error('Error submitting form:', error);
     } finally {
       setIsLoading(false);
     }
@@ -309,21 +235,21 @@ export default function FormPage() {
               errors={errors}
             />
           )}
-          {currentStep === 3 && (
+          {/* {currentStep === 3 && (
             <PaymentRatesStep
               data={formData}
               onChange={handleFieldChange}
               errors={errors}
             />
-          )}
-          {currentStep === 4 && (
+          )} */}
+          {currentStep === 3 && (
             <CreditCardsStep
               data={formData}
               onChange={handleFieldChange}
               errors={errors}
             />
           )}
-          {currentStep === 5 && (
+          {currentStep === 4 && (
             <ReviewStep
               data={formData}
               onEdit={handleEditStep}

@@ -15,8 +15,8 @@ export type FormData = {
   address?: string;
   aadhaar: string;
   pan: string;
-  aadhaarImage?: File;
-  panImage?: File;
+  aadhaarImageUrl?: string;
+  panImageUrl?: string;
   billPaymentRate: number;
   payoutRate: number;
   preferredPaymentMethod: string;

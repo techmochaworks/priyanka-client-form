@@ -25,7 +25,7 @@ export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps
       expiryDate: '',
       cardLimit: 0,
       bankName: '',
-      cardType: 'Unknown',
+      cardType: 'Credit',
     };
     onChange('creditCards', [...cards, newCard]);
   };
@@ -51,6 +51,13 @@ export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps
 
   const toggleShowCVV = (index: number) => {
     setShowCVV(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const getCardDisplayName = (card: CreditCardType, index: number) => {
+    if (card.bankName && card.bankName !== '') {
+      return card.bankName;
+    }
+    return `Card ${index + 1}`;
   };
 
   return (
@@ -79,7 +86,7 @@ export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps
 
             <div className="flex items-center gap-2 mb-4">
               <CreditCard className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold">Card {index + 1}</h3>
+              <h3 className="font-semibold">{getCardDisplayName(card, index)}</h3>
               {card.cardType !== 'Unknown' && (
                 <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
                   {card.cardType}
@@ -88,6 +95,47 @@ export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps
             </div>
 
             <div className="grid gap-4">
+              <div>
+                <Label htmlFor={`bankName-${index}`} className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4" />
+                  Bank Name <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={card.bankName}
+                  onValueChange={(value) => updateCard(index, 'bankName', value)}
+                >
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue placeholder="Select bank" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="HDFC Bank">HDFC Bank</SelectItem>
+                    <SelectItem value="ICICI Bank">ICICI Bank</SelectItem>
+                    <SelectItem value="SBI">State Bank of India</SelectItem>
+                    <SelectItem value="Axis Bank">Axis Bank</SelectItem>
+                    <SelectItem value="Kotak Mahindra Bank">Kotak Mahindra Bank</SelectItem>
+                    <SelectItem value="IDFC First Bank">IDFC First Bank</SelectItem>
+                    <SelectItem value="Yes Bank">Yes Bank</SelectItem>
+                    <SelectItem value="IndusInd Bank">IndusInd Bank</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {card.bankName === 'Other' && (
+                <div>
+                  <Label htmlFor={`customBankName-${index}`}>
+                    Enter Bank Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id={`customBankName-${index}`}
+                    value={card.customBankName || ''}
+                    onChange={(e) => updateCard(index, 'customBankName', e.target.value)}
+                    placeholder="Enter your bank name"
+                    className="mt-1.5"
+                  />
+                </div>
+              )}
+
               <div>
                 <Label htmlFor={`cardNumber-${index}`}>
                   Card Number <span className="text-destructive">*</span>
@@ -154,32 +202,6 @@ export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps
                   placeholder="Enter card limit"
                   className="mt-1.5"
                 />
-              </div>
-
-              <div>
-                <Label htmlFor={`bankName-${index}`} className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  Bank Name <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  value={card.bankName}
-                  onValueChange={(value) => updateCard(index, 'bankName', value)}
-                >
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue placeholder="Select bank" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HDFC Bank">HDFC Bank</SelectItem>
-                    <SelectItem value="ICICI Bank">ICICI Bank</SelectItem>
-                    <SelectItem value="SBI">State Bank of India</SelectItem>
-                    <SelectItem value="Axis Bank">Axis Bank</SelectItem>
-                    <SelectItem value="Kotak Mahindra Bank">Kotak Mahindra Bank</SelectItem>
-                    <SelectItem value="IDFC First Bank">IDFC First Bank</SelectItem>
-                    <SelectItem value="Yes Bank">Yes Bank</SelectItem>
-                    <SelectItem value="IndusInd Bank">IndusInd Bank</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           </div>

@@ -58,37 +58,6 @@ export const PersonalInfoStep = ({ data, onChange, errors }: PersonalInfoStepPro
           />
           {errors.mobile && <p className="text-sm text-destructive mt-1">{errors.mobile}</p>}
         </div>
-
-        <div>
-          <Label htmlFor="email" className="flex items-center gap-2">
-            <Mail className="w-4 h-4" />
-            Email Address
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            value={data.email || ''}
-            onChange={(e) => onChange('email', e.target.value)}
-            placeholder="your.email@example.com (optional)"
-            className="mt-1.5"
-          />
-          {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
-        </div>
-
-        <div>
-          <Label htmlFor="dateOfBirth" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Date of Birth
-          </Label>
-          <Input
-            id="dateOfBirth"
-            type="date"
-            value={data.dateOfBirth || ''}
-            onChange={(e) => onChange('dateOfBirth', e.target.value)}
-            className="mt-1.5"
-          />
-        </div>
-
         <div>
           <Label htmlFor="address" className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />

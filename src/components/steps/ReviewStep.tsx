@@ -10,7 +10,10 @@ interface ReviewStepProps {
   onConfirmChange: (value: boolean) => void;
 }
 
+
 export const ReviewStep = ({ data, onEdit, confirmed, onConfirmChange }: ReviewStepProps) => {
+  console.log(data)
+
   return (
     <div className="space-y-6">
       <div>
@@ -59,8 +62,7 @@ export const ReviewStep = ({ data, onEdit, confirmed, onConfirmChange }: ReviewS
         </dl>
       </div>
 
-      {/* Identity Documents */}
-      <div className="p-4 border border-border rounded-lg bg-card">
+       <div className="p-4 border border-border rounded-lg bg-card">
         <div className="flex justify-between items-start mb-3">
           <h3 className="font-semibold text-lg">Identity Documents</h3>
           <Button variant="ghost" size="sm" onClick={() => onEdit(2)}>
@@ -69,51 +71,43 @@ export const ReviewStep = ({ data, onEdit, confirmed, onConfirmChange }: ReviewS
           </Button>
         </div>
         <dl className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Aadhaar:</dt>
-            <dd className="font-medium">{data.aadhaar}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">PAN:</dt>
-            <dd className="font-medium">{data.pan}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Aadhaar Image:</dt>
-            <dd className="font-medium">{data.aadhaarImage ? '✓ Uploaded' : 'Not uploaded'}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">PAN Image:</dt>
-            <dd className="font-medium">{data.panImage ? '✓ Uploaded' : 'Not uploaded'}</dd>
-          </div>
+          
+          <div className="flex justify-between items-center">
+  <dt className="text-muted-foreground">Aadhaar Image:</dt>
+  <div className="flex items-center gap-2">
+    <dd className="font-medium">{data.aadhaarImageUrl ? '✓ Uploaded' : 'Not uploaded'}</dd>
+    {data.aadhaarImageUrl && (
+      <Button 
+        variant="outline" 
+        size="sm"
+        onClick={() => window.open(data.aadhaarImageUrl, '_blank')}
+      >
+        View
+      </Button>
+    )}
+  </div>
+</div>
+
+          <div className="flex justify-between items-center">
+  <dt className="text-muted-foreground">Pan Image:</dt>
+  <div className="flex items-center gap-2">
+    <dd className="font-medium">{data.panImageUrl ? '✓ Uploaded' : 'Not uploaded'}</dd>
+    {data.panImageUrl && (
+      <Button 
+        variant="outline" 
+        size="sm"
+        onClick={() => window.open(data.panImageUrl, '_blank')}
+      >
+        View
+      </Button>
+    )}
+  </div>
+</div>
         </dl>
       </div>
 
-      {/* Payment Rates */}
-      <div className="p-4 border border-border rounded-lg bg-card">
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="font-semibold text-lg">Payment Rates</h3>
-          <Button variant="ghost" size="sm" onClick={() => onEdit(3)}>
-            <Edit className="w-4 h-4 mr-1" />
-            Edit
-          </Button>
-        </div>
-        <dl className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Bill Payment Rate:</dt>
-            <dd className="font-medium">{data.billPaymentRate}%</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Payout Rate:</dt>
-            <dd className="font-medium">{data.payoutRate}%</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Payment Method:</dt>
-            <dd className="font-medium capitalize">{data.preferredPaymentMethod?.replace('_', ' ')}</dd>
-          </div>
-        </dl>
-      </div>
 
-      {/* Credit Cards */}
+
       <div className="p-4 border border-border rounded-lg bg-card">
         <div className="flex justify-between items-start mb-3">
           <h3 className="font-semibold text-lg">Credit Cards</h3>
@@ -125,9 +119,9 @@ export const ReviewStep = ({ data, onEdit, confirmed, onConfirmChange }: ReviewS
         <div className="space-y-3">
           {data.creditCards?.map((card, index) => (
             <div key={index} className="p-3 bg-accent rounded-md">
-              <p className="font-medium mb-1">Card {index + 1} - {card.cardType}</p>
+              <p className="font-medium mb-1">{card.bankName} </p>
               <p className="text-sm text-muted-foreground">{card.cardNumber}</p>
-              <p className="text-sm text-muted-foreground">{card.bankName} • Limit: ₹{card.cardLimit.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Limit: ₹{card.cardLimit.toLocaleString()}</p>
             </div>
           ))}
         </div>
