@@ -209,7 +209,7 @@ export default function FormPage() {
           <p className="text-primary-foreground/90">Client Details Collection Form</p>
           {distributorName && (
             <p className="text-sm mt-2 text-primary-foreground/80">
-              Distributor: {distributorName}
+              Retailer: {distributorName}
             </p>
           )}
         </div>
