@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CreditCard as CreditCardType, FormData } from '@/types/form';
 import { formatCardNumber, formatExpiry, getCardType } from '@/lib/validation';
-import { CreditCard, Plus, Trash2, Eye, EyeOff, Building2 } from 'lucide-react';
+import { CreditCard, Plus, Trash2, Eye, EyeOff, Building2, User, Phone, Calendar } from 'lucide-react';
 import { useState } from 'react';
 
 interface CreditCardsStepProps {
@@ -26,6 +26,10 @@ export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps
       cardLimit: 0,
       bankName: '',
       cardType: 'Credit',
+      cardHolderName: '',
+      cardHolderMobile: '',
+      cardDueDate: '',
+      billGenerationDate: '',
     };
     onChange('creditCards', [...cards, newCard]);
   };
@@ -39,7 +43,6 @@ export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps
     const updatedCards = [...cards];
     updatedCards[index] = { ...updatedCards[index], [field]: value };
     
-    // Auto-detect card type when card number changes
     if (field === 'cardNumber') {
       const formatted = formatCardNumber(value);
       updatedCards[index].cardNumber = formatted;
@@ -128,13 +131,42 @@ export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps
                   </Label>
                   <Input
                     id={`customBankName-${index}`}
-                    value={card.customBankName || ''}
-                    onChange={(e) => updateCard(index, 'customBankName', e.target.value)}
+                    value={card.bankName || ''}
+                    onChange={(e) => updateCard(index, 'bankName', e.target.value)}
                     placeholder="Enter your bank name"
                     className="mt-1.5"
                   />
                 </div>
               )}
+
+              <div>
+                <Label htmlFor={`cardHolderName-${index}`} className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Card Holder Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id={`cardHolderName-${index}`}
+                  value={card.cardHolderName || ''}
+                  onChange={(e) => updateCard(index, 'cardHolderName', e.target.value)}
+                  placeholder="Name as on card"
+                  className="mt-1.5"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor={`cardHolderMobile-${index}`} className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  Card Holder Mobile <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id={`cardHolderMobile-${index}`}
+                  value={card.cardHolderMobile || ''}
+                  onChange={(e) => updateCard(index, 'cardHolderMobile', e.target.value.replace(/\D/g, '').substring(0, 10))}
+                  placeholder="10-digit mobile number"
+                  maxLength={10}
+                  className="mt-1.5"
+                />
+              </div>
 
               <div>
                 <Label htmlFor={`cardNumber-${index}`}>
@@ -202,6 +234,52 @@ export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps
                   placeholder="Enter card limit"
                   className="mt-1.5"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor={`billGenerationDate-${index}`} className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Bill Generation Date <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={card.billGenerationDate || ''}
+                    onValueChange={(value) => updateCard(index, 'billGenerationDate', value)}
+                  >
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Select date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                        <SelectItem key={day} value={day.toString()}>
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor={`cardDueDate-${index}`} className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Card Due Date <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={card.cardDueDate || ''}
+                    onValueChange={(value) => updateCard(index, 'cardDueDate', value)}
+                  >
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Select date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                        <SelectItem key={day} value={day.toString()}>
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>

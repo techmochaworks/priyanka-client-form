@@ -5,6 +5,24 @@ export type CreditCard = {
   cardLimit: number;
   bankName: string;
   cardType: string;
+  cardHolderName: string;
+  cardHolderMobile: string;
+  cardDueDate: string;
+  billGenerationDate: string;
+};
+
+export type BankAccount = {
+  accountNumber: string;
+  accountHolderName: string;
+  mobile: string;
+  bankName: string;
+  ifscCode: string;
+  branch: string;
+};
+
+export type AadhaarImage = {
+  url: string;
+  side: 'front' | 'back';
 };
 
 export type FormData = {
@@ -15,10 +33,11 @@ export type FormData = {
   address?: string;
   aadhaar: string;
   pan: string;
-  aadhaarImageUrl?: string;
+  aadhaarImages: AadhaarImage[]; // Changed to array
   panImageUrl?: string;
   billPaymentRate: number;
   payoutRate: number;
   preferredPaymentMethod: string;
   creditCards: CreditCard[];
+  bankAccounts: BankAccount[];
 };

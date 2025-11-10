@@ -72,18 +72,30 @@ export const ReviewStep = ({ data, onEdit, confirmed, onConfirmChange }: ReviewS
         </div>
         <dl className="space-y-2 text-sm">
           
-          <div className="flex justify-between items-center">
-  <dt className="text-muted-foreground">Aadhaar Image:</dt>
-  <div className="flex items-center gap-2">
-    <dd className="font-medium">{data.aadhaarImageUrl ? '✓ Uploaded' : 'Not uploaded'}</dd>
-    {data.aadhaarImageUrl && (
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => window.open(data.aadhaarImageUrl, '_blank')}
-      >
-        View
-      </Button>
+        
+
+<div className="flex justify-between items-start">
+  <dt className="text-muted-foreground">Aadhaar Images:</dt>
+  <div className="flex flex-col gap-2">
+    {data.aadhaarImages && data.aadhaarImages.length > 0 ? (
+      <>
+        {data.aadhaarImages.map((img, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <dd className="font-medium capitalize">
+              {img.side} Side: ✓ Uploaded
+            </dd>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.open(img.url, '_blank')}
+            >
+              View {img.side}
+            </Button>
+          </div>
+        ))}
+      </>
+    ) : (
+      <dd className="font-medium text-destructive">Not uploaded</dd>
     )}
   </div>
 </div>
@@ -105,7 +117,29 @@ export const ReviewStep = ({ data, onEdit, confirmed, onConfirmChange }: ReviewS
 </div>
         </dl>
       </div>
+<div className="p-4 border border-border rounded-lg bg-card">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-semibold text-lg">Bank Detials</h3>
+          <Button variant="ghost" size="sm" onClick={() => onEdit(3)}>
+            <Edit className="w-4 h-4 mr-1" />
+            Edit
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {data.bankAccounts?.map((BankAccount, index) => (
+            <div key={index} className="p-3 bg-accent rounded-md">
+              <p className="font-medium mb-1">{BankAccount.accountHolderName} </p>
+              <p className="text-sm text-muted-foreground">{BankAccount.accountNumber}</p>
+                            <p className="text-sm text-muted-foreground">{BankAccount.bankName}</p>
+              <p className="text-sm text-muted-foreground">{BankAccount.branch}</p>
+                            <p className="text-sm text-muted-foreground">{BankAccount.ifscCode}</p>
+              <p className="text-sm text-muted-foreground">{BankAccount.mobile}</p>
 
+
+            </div>
+          ))}
+        </div>
+      </div>
 
 
       <div className="p-4 border border-border rounded-lg bg-card">
