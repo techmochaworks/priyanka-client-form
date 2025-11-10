@@ -44,7 +44,7 @@ export default function SuccessPage() {
             Your details have been submitted successfully. Your distributor will contact you shortly.
           </p>
 
-          <div className="bg-accent p-4 rounded-lg mb-8">
+          {/* <div className="bg-accent p-4 rounded-lg mb-8">
             <p className="text-sm text-muted-foreground mb-2">Reference Number</p>
             <div className="flex items-center justify-center gap-2">
               <code className="text-lg font-mono font-semibold text-foreground">
@@ -62,7 +62,7 @@ export default function SuccessPage() {
             <p className="text-xs text-muted-foreground mt-2">
               Save this reference number for your records
             </p>
-          </div>
+          </div> */}
 
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg text-left">
@@ -73,19 +73,19 @@ export default function SuccessPage() {
                 <li>• You'll receive confirmation once approved</li>
               </ul>
             </div>
-
+{/* 
             <Button
               onClick={handleNewSubmission}
               variant="outline"
               className="w-full"
             >
               Submit Another Form
-            </Button>
+            </Button> */}
           </div>
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          © 2024 Priyanka Enterprises. All rights reserved.
+          © 2025 Priyanka Enterprises. All rights reserved.
         </p>
       </div>
     </div>
