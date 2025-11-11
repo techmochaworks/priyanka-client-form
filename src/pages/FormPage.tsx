@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { FormData } from '@/types/form';
 import { ProgressBar } from '@/components/ProgressBar';
@@ -224,12 +224,15 @@ export default function FormPage() {
     setCurrentStep(step);
     window.scrollTo(0, 0);
   };
+  const randomDigit = Math.floor(Math.random() * 9) + 1;
 
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      const clientId = `CST-${Date.now()}`;
+const clientId = `CST-01${randomDigit}`;
+      const batch = writeBatch(db);
 
+      // Prepare client data
       const clientData = {
         distributorId: distributorId!,
         name: formData.name,
@@ -248,7 +251,36 @@ export default function FormPage() {
         source: 'client_form',
       };
 
-      await addDoc(collection(db, 'clients'), clientData);
+      // Add client document
+      const clientRef = doc(collection(db, 'clients'));
+      batch.set(clientRef, clientData);
+
+      // Create reminders for each credit card
+      formData.creditCards?.forEach((card, index) => {
+        const reminderData = {
+          clientId: clientRef.id,
+          clientName: formData.name,
+          clientMobile: formData.mobile,
+          distributorId: distributorId!,
+          distributorName: distributorName,
+          cardIndex: index,
+          bankName: card.bankName,
+          cardHolderName: card.cardHolderName,
+          cardHolderMobile: card.cardHolderMobile,
+          cardnumber: card.cardNumber,
+          billGenerationDate: parseInt(card.billGenerationDate || '0'),
+          cardDueDate: parseInt(card.cardDueDate || '0'),
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        const reminderRef = doc(collection(db, 'reminders'));
+        batch.set(reminderRef, reminderData);
+      });
+
+      // Commit batch
+      await batch.commit();
 
       localStorage.removeItem(STORAGE_KEY);
 
