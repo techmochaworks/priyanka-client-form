@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, addDoc, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { doc, getDoc, collection, serverTimestamp, writeBatch, query, orderBy, getDocs, limit, where, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { FormData } from '@/types/form';
 import { ProgressBar } from '@/components/ProgressBar';
@@ -13,6 +13,8 @@ import { ReviewStep } from '@/components/steps/ReviewStep';
 import { validateMobile } from '@/lib/validation';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/authcontext';
+
 
 const TOTAL_STEPS = 5;
 const STORAGE_KEY = 'client_form_data';
@@ -20,6 +22,9 @@ const STORAGE_KEY = 'client_form_data';
 export default function FormPage() {
   const { distributorId } = useParams<{ distributorId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const editClientId = searchParams.get('edit'); // Check if we're editing
   
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<FormData>>({
@@ -50,6 +55,39 @@ export default function FormPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [distributorName, setDistributorName] = useState('');
   const [isValidating, setIsValidating] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Load existing client data if in edit mode
+  useEffect(() => {
+    const loadClientData = async () => {
+      if (!editClientId) return;
+
+      try {
+        const clientRef = doc(db, 'clients', editClientId);
+        const clientSnap = await getDoc(clientRef);
+
+        if (clientSnap.exists()) {
+          const clientData = clientSnap.data();
+          setFormData({
+            name: clientData.name,
+            mobile: clientData.mobile,
+            email: clientData.email,
+            address: clientData.address,
+            aadhaarImages: clientData.aadhaarImages || [],
+            panImageUrl: clientData.panImageUrl,
+            bankAccounts: clientData.bankAccounts || [],
+            creditCards: clientData.creditCards || [],
+          });
+          setIsEditMode(true);
+        }
+      } catch (error) {
+        console.error('Error loading client data:', error);
+        toast.error('Failed to load client data');
+      }
+    };
+
+    loadClientData();
+  }, [editClientId]);
 
   useEffect(() => {
     const validateDistributor = async () => {
@@ -79,25 +117,27 @@ export default function FormPage() {
   }, [distributorId, navigate]);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setFormData({
-          ...parsed,
-          aadhaarImages: parsed.aadhaarImages || []
-        });
-      } catch (e) {
-        console.error('Error loading saved data:', e);
+    if (!isEditMode) {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setFormData({
+            ...parsed,
+            aadhaarImages: parsed.aadhaarImages || []
+          });
+        } catch (e) {
+          console.error('Error loading saved data:', e);
+        }
       }
     }
-  }, []);
+  }, [isEditMode]);
 
   useEffect(() => {
-    if (currentStep > 1 && Object.keys(formData).length > 1) {
+    if (!isEditMode && currentStep > 1 && Object.keys(formData).length > 1) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
     }
-  }, [formData, currentStep]);
+  }, [formData, currentStep, isEditMode]);
 
   const handleFieldChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -126,67 +166,66 @@ export default function FormPage() {
           newErrors.email = 'Invalid email address';
         }
         break;
-
-      case 2:
-        const aadhaarImages = formData.aadhaarImages || [];
-        const hasFront = aadhaarImages.some(img => img.side === 'front');
-        const hasBack = aadhaarImages.some(img => img.side === 'back');
+         // case 2:
+      //   const aadhaarImages = formData.aadhaarImages || [];
+      //   const hasFront = aadhaarImages.some(img => img.side === 'front');
+      //   const hasBack = aadhaarImages.some(img => img.side === 'back');
         
-        if (!hasFront || !hasBack) {
-          newErrors.aadhaarImages = 'Both front and back sides of Aadhaar card are required';
-        }
+      //   if (!hasFront || !hasBack) {
+      //     newErrors.aadhaarImages = 'Both front and back sides of Aadhaar card are required';
+      //   }
         
-        if (!formData.panImageUrl?.trim()) {
-          newErrors.panImageUrl = 'PAN card image is required';
-        }
-        break;
+      //   if (!formData.panImageUrl?.trim()) {
+      //     newErrors.panImageUrl = 'PAN card image is required';
+      //   }
+      //   break;
      
-      case 3:
-        if (!formData.bankAccounts || formData.bankAccounts.length === 0) {
-          newErrors.bankAccounts = 'At least one bank account is required';
-        } else {
-          const invalidAccounts = formData.bankAccounts.some(account => {
-            return !account.accountNumber?.trim() ||
-                   !account.accountHolderName?.trim() ||
-                   !account.mobile?.trim() ||
-                   account.mobile.length !== 10 ||
-                   !account.bankName?.trim() ||
-                   !account.ifscCode?.trim() ||
-                   !validateIFSC(account.ifscCode) ||
-                   !account.branch?.trim();
-          });
+      // case 3:
+      //   if (!formData.bankAccounts || formData.bankAccounts.length === 0) {
+      //     newErrors.bankAccounts = 'At least one bank account is required';
+      //   } else {
+      //     const invalidAccounts = formData.bankAccounts.some(account => {
+      //       return !account.accountNumber?.trim() ||
+      //              !account.accountHolderName?.trim() ||
+      //              !account.mobile?.trim() ||
+      //              account.mobile.length !== 10 ||
+      //              !account.bankName?.trim() ||
+      //              !account.ifscCode?.trim() ||
+      //              !validateIFSC(account.ifscCode) ||
+      //              !account.branch?.trim();
+      //     });
 
-          if (invalidAccounts) {
-            newErrors.bankAccounts = 'Please fill all required fields correctly for all bank accounts';
-          }
-        }
-        break;
+      //     if (invalidAccounts) {
+      //       newErrors.bankAccounts = 'Please fill all required fields correctly for all bank accounts';
+      //     }
+      //   }
+      //   break;
 
-      case 4:
-        if (!formData.creditCards || formData.creditCards.length === 0) {
-          newErrors.creditCards = 'At least one credit card is required';
-        } else {
-          const invalidCards = formData.creditCards.some(card => {
-            const cardNumberDigits = card.cardNumber.replace(/\D/g, '');
-            return !card.bankName?.trim() ||
-                   !card.cardHolderName?.trim() ||
-                   !card.cardHolderMobile?.trim() ||
-                   card.cardHolderMobile.length !== 10 ||
-                   cardNumberDigits.length < 13 ||
-                   !card.cvv?.trim() ||
-                   card.cvv.length < 3 ||
-                   !card.expiryDate?.trim() ||
-                   !card.cardLimit ||
-                   card.cardLimit <= 0 ||
-                   !card.billGenerationDate?.trim() ||
-                   !card.cardDueDate?.trim();
-          });
+      // case 4:
+      //   if (!formData.creditCards || formData.creditCards.length === 0) {
+      //     newErrors.creditCards = 'At least one credit card is required';
+      //   } else {
+      //     const invalidCards = formData.creditCards.some(card => {
+      //       const cardNumberDigits = card.cardNumber.replace(/\D/g, '');
+      //       return !card.bankName?.trim() ||
+      //              !card.cardHolderName?.trim() ||
+      //              !card.cardHolderMobile?.trim() ||
+      //              card.cardHolderMobile.length !== 10 ||
+      //              cardNumberDigits.length < 13 ||
+      //              !card.cvv?.trim() ||
+      //              card.cvv.length < 3 ||
+      //              !card.expiryDate?.trim() ||
+      //              !card.cardLimit ||
+      //              card.cardLimit <= 0 ||
+      //              !card.billGenerationDate?.trim() ||
+      //              !card.cardDueDate?.trim();
+      //     });
 
-          if (invalidCards) {
-            newErrors.creditCards = 'Please fill all required fields correctly for all credit cards';
-          }
-        }
-        break;
+      //     if (invalidCards) {
+      //       newErrors.creditCards = 'Please fill all required fields correctly for all credit cards';
+      //     }
+      //   }
+      //   break;
 
       case 5:
         if (!confirmed) {
@@ -220,21 +259,41 @@ export default function FormPage() {
     window.scrollTo(0, 0);
   };
 
+  const generateClientId = async () => {
+    try {
+      const clientsRef = collection(db, 'clients');
+      const q = query(clientsRef, orderBy('clientId', 'desc'), limit(1));
+      const snapshot = await getDocs(q);
+      
+      let nextNumber = 1;
+      if (!snapshot.empty) {
+        const lastId = snapshot.docs[0].data().clientId;
+        const lastNumber = parseInt(lastId.replace('CST-', ''));
+        nextNumber = lastNumber + 1;
+      }
+      
+      return `CST-${String(nextNumber).padStart(2, '0')}`;
+    } catch (error) {
+      console.error('Error generating client ID:', error);
+      return `CST-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+  };
+
   const handleEditStep = (step: number) => {
     setCurrentStep(step);
     window.scrollTo(0, 0);
   };
-  const randomDigit = Math.floor(Math.random() * 9) + 1;
 
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-const clientId = `CST-01${randomDigit}`;
       const batch = writeBatch(db);
+      
+      const clientId = isEditMode ? editClientId! : await generateClientId();
 
-      // Prepare client data
       const clientData = {
         distributorId: distributorId!,
+        userId: user?.uid || null, // ADDED: Link to user
         name: formData.name,
         mobile: formData.mobile,
         email: formData.email || '',
@@ -246,19 +305,43 @@ const clientId = `CST-01${randomDigit}`;
           ...card,
           cardNumber: card.cardNumber.replace(/\D/g, ''),
         })) || [],
-        submittedAt: serverTimestamp(),
+        submittedAt: isEditMode ? undefined : serverTimestamp(),
+        updatedAt: serverTimestamp(),
         clientId: clientId,
         source: 'client_form',
       };
 
-      // Add client document
-      const clientRef = doc(collection(db, 'clients'));
-      batch.set(clientRef, clientData);
+      const clientRef = doc(db, "clients", clientId);
+      batch.set(clientRef, clientData, { merge: true });
+    if (!isEditMode && user) {
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      const existingClientIds = userDoc.data()?.clientIds || [];
+      
+      if (!existingClientIds.includes(clientId)) {
+        batch.update(userRef, {
+          clientIds: arrayUnion(clientId)
+        });
+      }
+    }
 
-      // Create reminders for each credit card
+
+      // If editing, DELETE old reminders first
+      if (isEditMode) {
+        const remindersQuery = query(
+          collection(db, 'reminders'),
+          where('clientId', '==', clientId)
+        );
+        const oldReminders = await getDocs(remindersQuery);
+        oldReminders.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+      }
+
+      // Create new/updated reminders
       formData.creditCards?.forEach((card, index) => {
         const reminderData = {
-          clientId: clientRef.id,
+          clientId: clientId,
           clientName: formData.name,
           clientMobile: formData.mobile,
           distributorId: distributorId!,
@@ -279,13 +362,14 @@ const clientId = `CST-01${randomDigit}`;
         batch.set(reminderRef, reminderData);
       });
 
-      // Commit batch
       await batch.commit();
 
-      localStorage.removeItem(STORAGE_KEY);
+      if (!isEditMode) {
+        localStorage.removeItem(STORAGE_KEY);
+      }
 
       navigate(`/success?ref=${clientId}`);
-      toast.success('Form submitted successfully!');
+      toast.success(isEditMode ? 'Client updated successfully!' : 'Form submitted successfully!');
     } catch (error) {
       console.error('Error submitting form:', error);
       toast.error('Failed to submit form. Please try again.');
@@ -307,7 +391,9 @@ const clientId = `CST-01${randomDigit}`;
       <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-8 px-4">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Priyanka Enterprises</h1>
-          <p className="text-primary-foreground/90">Client Details Collection Form</p>
+          <p className="text-primary-foreground/90">
+            {isEditMode ? 'Edit Client Details' : 'Client Details Collection Form'}
+          </p>
           {distributorName && (
             <p className="text-sm mt-2 text-primary-foreground/80">
               Retailer: {distributorName}

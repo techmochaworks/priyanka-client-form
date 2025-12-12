@@ -2,6 +2,8 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
+import { getAuth } from 'firebase/auth';
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyAlJW-zLUxSRgMIqKEw8EnKqTRJO77nqZU",
@@ -19,6 +21,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize services
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const auth = getAuth(app);
+
 
 // Initialize Analytics (only in browser)
 if (typeof window !== 'undefined') {
