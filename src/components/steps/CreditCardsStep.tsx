@@ -51,7 +51,111 @@ const getCardType = (cardNumber: string): string => {
   return 'Credit';
 };
 
-export  function CreditCardsStep({ data, onChange, errors }: CreditCardsStepProps) {
+// --- FIX: CardPreview moved OUTSIDE the main component ---
+const CardPreview = ({ 
+  card, 
+  index,
+  isFlipped,
+  updateCard,
+  setFocusedField
+}: { 
+  card: CreditCardType; 
+  index: number;
+  isFlipped: boolean;
+  updateCard: (index: number, field: keyof CreditCardType, value: any) => void;
+  setFocusedField: (field: string | null) => void;
+}) => (
+  <div style={{ perspective: '1000px' }} className="w-full h-52 sm:h-56">
+    <div 
+      className="relative w-full h-full transition-all duration-700"
+      style={{
+        transformStyle: 'preserve-3d',
+        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+      }}
+    >
+      {/* Front of Card */}
+      <div 
+        className="absolute inset-0 rounded-xl shadow-2xl p-5 sm:p-6 bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white"
+        style={{ backfaceVisibility: 'hidden' }}
+      >
+        {/* Chip */}
+        <div className="w-10 h-8 sm:w-12 sm:h-10 bg-gradient-to-br from-yellow-200 to-yellow-400 rounded mb-3 sm:mb-4"></div>
+        
+        {/* Editable Bank Name */}
+        <input
+          type="text"
+          value={card.bankName || ''}
+          onChange={(e) => updateCard(index, 'bankName', e.target.value)}
+          placeholder="BANK NAME"
+          className="text-xs sm:text-sm opacity-80 mb-3 sm:mb-4 bg-transparent border-none outline-none w-full text-white placeholder-white/50 focus:opacity-100 uppercase"
+        />
+        
+        {/* Editable Card Number */}
+        <input
+          type="text"
+          value={card.cardNumber || ''}
+          onChange={(e) => updateCard(index, 'cardNumber', e.target.value)}
+          onFocus={() => setFocusedField(`number-${index}`)}
+          onBlur={() => setFocusedField(null)}
+          placeholder="#### #### #### ####"
+          maxLength={19}
+          className="text-lg sm:text-xl font-mono tracking-wider mb-4 sm:mb-6 bg-transparent border-none outline-none w-full text-white placeholder-white/30 focus:ring-1 focus:ring-white/30 rounded px-1"
+        />
+        
+        <div className="flex justify-between items-end">
+          <div className="flex-1 mr-3 sm:mr-4">
+            <div className="text-[10px] sm:text-xs opacity-70 mb-1">Card Holder</div>
+            <input
+              type="text"
+              value={card.cardHolderName || ''}
+              onChange={(e) => updateCard(index, 'cardHolderName', e.target.value.toUpperCase())}
+              placeholder="YOUR NAME"
+              className="text-xs sm:text-sm font-medium bg-transparent border-none outline-none w-full text-white placeholder-white/30 focus:ring-1 focus:ring-white/30 rounded px-1 uppercase"
+            />
+          </div>
+          <div>
+            <div className="text-[10px] sm:text-xs opacity-70 mb-1">Expires</div>
+            <input
+              type="text"
+              value={card.expiryDate || ''}
+              onChange={(e) => updateCard(index, 'expiryDate', formatExpiry(e.target.value))}
+              placeholder="MM/YY"
+              maxLength={5}
+              className="text-xs sm:text-sm font-medium bg-transparent border-none outline-none w-14 sm:w-16 text-white placeholder-white/30 focus:ring-1 focus:ring-white/30 rounded px-1"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Back of Card */}
+      <div 
+        className="absolute inset-0 rounded-xl shadow-2xl bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white"
+        style={{ 
+          backfaceVisibility: 'hidden',
+          transform: 'rotateY(180deg)'
+        }}
+      >
+        <div className="w-full h-10 sm:h-12 bg-black mt-5 sm:mt-6"></div>
+        <div className="px-5 sm:px-6 mt-5 sm:mt-6">
+          <div className="text-[10px] sm:text-xs opacity-70 mb-1">CVV</div>
+          <input
+            type="text"
+            value={card.cvv || ''}
+            onChange={(e) => updateCard(index, 'cvv', e.target.value.replace(/\D/g, ''))}
+            onFocus={() => setFocusedField(`cvv-${index}`)}
+            onBlur={() => setFocusedField(null)}
+            placeholder="***"
+            maxLength={4}
+            className="bg-white text-black px-3 py-2 rounded text-right font-mono w-full outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="mt-5 sm:mt-6 text-[10px] sm:text-xs opacity-50">Customer Signature</div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+export function CreditCardsStep({ data, onChange, errors }: CreditCardsStepProps) {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const cards = data.creditCards || [];
 
@@ -89,105 +193,6 @@ export  function CreditCardsStep({ data, onChange, errors }: CreditCardsStepProp
     onChange('creditCards', updatedCards);
   };
 
-  const CardPreview = ({ 
-    card, 
-    index,
-    isFlipped 
-  }: { 
-    card: CreditCardType; 
-    index: number;
-    isFlipped: boolean;
-  }) => (
-    <div style={{ perspective: '1000px' }} className="w-full h-52 sm:h-56">
-      <div 
-        className="relative w-full h-full transition-all duration-700"
-        style={{
-          transformStyle: 'preserve-3d',
-          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
-        }}
-      >
-        {/* Front of Card */}
-        <div 
-          className="absolute inset-0 rounded-xl shadow-2xl p-5 sm:p-6 bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white"
-          style={{ backfaceVisibility: 'hidden' }}
-        >
-          {/* Chip */}
-          <div className="w-10 h-8 sm:w-12 sm:h-10 bg-gradient-to-br from-yellow-200 to-yellow-400 rounded mb-3 sm:mb-4"></div>
-          
-          {/* Editable Bank Name */}
-          <input
-            type="text"
-            value={card.bankName || ''}
-            onChange={(e) => updateCard(index, 'bankName', e.target.value)}
-            placeholder="BANK NAME"
-            className="text-xs sm:text-sm opacity-80 mb-3 sm:mb-4 bg-transparent border-none outline-none w-full text-white placeholder-white/50 focus:opacity-100 uppercase"
-          />
-          
-          {/* Editable Card Number */}
-          <input
-            type="text"
-            value={card.cardNumber || ''}
-            onChange={(e) => updateCard(index, 'cardNumber', e.target.value)}
-            onFocus={() => setFocusedField(`number-${index}`)}
-            onBlur={() => setFocusedField(null)}
-            placeholder="#### #### #### ####"
-            maxLength={19}
-            className="text-lg sm:text-xl font-mono tracking-wider mb-4 sm:mb-6 bg-transparent border-none outline-none w-full text-white placeholder-white/30 focus:ring-1 focus:ring-white/30 rounded px-1"
-          />
-          
-          <div className="flex justify-between items-end">
-            <div className="flex-1 mr-3 sm:mr-4">
-              <div className="text-[10px] sm:text-xs opacity-70 mb-1">Card Holder</div>
-              <input
-                type="text"
-                value={card.cardHolderName || ''}
-                onChange={(e) => updateCard(index, 'cardHolderName', e.target.value.toUpperCase())}
-                placeholder="YOUR NAME"
-                className="text-xs sm:text-sm font-medium bg-transparent border-none outline-none w-full text-white placeholder-white/30 focus:ring-1 focus:ring-white/30 rounded px-1 uppercase"
-              />
-            </div>
-            <div>
-              <div className="text-[10px] sm:text-xs opacity-70 mb-1">Expires</div>
-              <input
-                type="text"
-                value={card.expiryDate || ''}
-                onChange={(e) => updateCard(index, 'expiryDate', formatExpiry(e.target.value))}
-                placeholder="MM/YY"
-                maxLength={5}
-                className="text-xs sm:text-sm font-medium bg-transparent border-none outline-none w-14 sm:w-16 text-white placeholder-white/30 focus:ring-1 focus:ring-white/30 rounded px-1"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Back of Card */}
-        <div 
-          className="absolute inset-0 rounded-xl shadow-2xl bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white"
-          style={{ 
-            backfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)'
-          }}
-        >
-          <div className="w-full h-10 sm:h-12 bg-black mt-5 sm:mt-6"></div>
-          <div className="px-5 sm:px-6 mt-5 sm:mt-6">
-            <div className="text-[10px] sm:text-xs opacity-70 mb-1">CVV</div>
-            <input
-              type="text"
-              value={card.cvv || ''}
-              onChange={(e) => updateCard(index, 'cvv', e.target.value.replace(/\D/g, ''))}
-              onFocus={() => setFocusedField(`cvv-${index}`)}
-              onBlur={() => setFocusedField(null)}
-              placeholder="***"
-              maxLength={4}
-              className="bg-white text-black px-3 py-2 rounded text-right font-mono w-full outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <div className="mt-5 sm:mt-6 text-[10px] sm:text-xs opacity-50">Customer Signature</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gray-50">
         <div className="text-center mb-6">
@@ -223,6 +228,8 @@ export  function CreditCardsStep({ data, onChange, errors }: CreditCardsStepProp
                     card={card} 
                     index={index}
                     isFlipped={focusedField === `cvv-${index}`}
+                    updateCard={updateCard}
+                    setFocusedField={setFocusedField}
                   />
                 </div>
 
