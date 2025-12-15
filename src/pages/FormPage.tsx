@@ -424,7 +424,7 @@ switch (step) {
         localStorage.removeItem(STORAGE_KEY);
       }
 
-      navigate(`/success?ref=${clientId}`);
+      navigate(`/dashboard`);
       toast.success(isEditMode ? 'Client updated successfully!' : 'Form submitted successfully!');
     } catch (error) {
       console.error('Error submitting form:', error);
