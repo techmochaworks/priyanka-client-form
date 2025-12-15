@@ -154,87 +154,143 @@ export default function FormPage() {
   const validateStep = (step: number): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
 
-    switch (step) {
-      case 1:
+    // switch (step) {
+    //   case 1:
+    //     if (!formData.name?.trim()) newErrors.name = 'Name is required';
+    //     if (!formData.mobile) {
+    //       newErrors.mobile = 'Mobile number is required';
+    //     } else if (!validateMobile(formData.mobile)) {
+    //       newErrors.mobile = 'Invalid mobile number';
+    //     }
+    //     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    //       newErrors.email = 'Invalid email address';
+    //     }
+    //     break;
+    //      case 2:
+    //     const aadhaarImages = formData.aadhaarImages || [];
+    //     const hasFront = aadhaarImages.some(img => img.side === 'front');
+    //     const hasBack = aadhaarImages.some(img => img.side === 'back');
+        
+    //     if (!hasFront || !hasBack) {
+    //       newErrors.aadhaarImages = 'Both front and back sides of Aadhaar card are required';
+    //     }
+        
+    //     if (!formData.panImageUrl?.trim()) {
+    //       newErrors.panImageUrl = 'PAN card image is required';
+    //     }
+    //     break;
+     
+    //   case 3:
+    //     if (!formData.bankAccounts || formData.bankAccounts.length === 0) {
+    //       newErrors.bankAccounts = 'At least one bank account is required';
+    //     } else {
+    //       const invalidAccounts = formData.bankAccounts.some(account => {
+    //         return !account.accountNumber?.trim() ||
+    //                !account.accountHolderName?.trim() ||
+    //                !account.mobile?.trim() ||
+    //                account.mobile.length !== 10 ||
+    //                !account.bankName?.trim() ||
+    //                !account.ifscCode?.trim() ||
+    //                !validateIFSC(account.ifscCode) ||
+    //                !account.branch?.trim();
+    //       });
+
+    //       if (invalidAccounts) {
+    //         newErrors.bankAccounts = 'Please fill all required fields correctly for all bank accounts';
+    //       }
+    //     }
+    //     break;
+
+    //   case 4:
+    //     if (!formData.creditCards || formData.creditCards.length === 0) {
+    //       newErrors.creditCards = 'At least one credit card is required';
+    //     } else {
+    //       const invalidCards = formData.creditCards.some(card => {
+    //         const cardNumberDigits = card.cardNumber.replace(/\D/g, '');
+    //         return !card.bankName?.trim() ||
+    //                !card.cardHolderName?.trim() ||
+    //                !card.cardHolderMobile?.trim() ||
+    //                card.cardHolderMobile.length !== 10 ||
+    //                cardNumberDigits.length < 13 ||
+    //                !card.cvv?.trim() ||
+    //                card.cvv.length < 3 ||
+    //                !card.expiryDate?.trim() ||
+    //                !card.cardLimit ||
+    //                card.cardLimit <= 0 ||
+    //                !card.billGenerationDate?.trim() ||
+    //                !card.cardDueDate?.trim();
+    //       });
+
+    //       if (invalidCards) {
+    //         newErrors.creditCards = 'Please fill all required fields correctly for all credit cards';
+    //       }
+    //     }
+    //     break;
+
+    //   case 5:
+    //     if (!confirmed) {
+    //       toast.error('Please confirm that your information is accurate');
+    //       return false;
+    //     }
+    //     break;
+    // }
+switch (step) {
+      case 1: // Personal Info (REQUIRED)
         if (!formData.name?.trim()) newErrors.name = 'Name is required';
-        if (!formData.mobile) {
-          newErrors.mobile = 'Mobile number is required';
-        } else if (!validateMobile(formData.mobile)) {
-          newErrors.mobile = 'Invalid mobile number';
-        }
-        if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-          newErrors.email = 'Invalid email address';
+        if (!formData.mobile) newErrors.mobile = 'Mobile is required';
+        else if (!validateMobile(formData.mobile)) newErrors.mobile = 'Invalid mobile';
+        break;
+
+      case 2: // Credit Cards (REQUIRED)
+        if (!formData.creditCards || formData.creditCards.length === 0) {
+          newErrors.creditCards = 'Please add at least one credit card';
+        } else {
+          // Strict validation for cards
+          const invalidCards = formData.creditCards.some(card => {
+             return !card.bankName || !card.cardNumber || card.cardNumber.length < 15 || !card.cvv || !card.expiryDate;
+          });
+          if (invalidCards) newErrors.creditCards = 'Please complete all card details';
         }
         break;
-         // case 2:
-      //   const aadhaarImages = formData.aadhaarImages || [];
-      //   const hasFront = aadhaarImages.some(img => img.side === 'front');
-      //   const hasBack = aadhaarImages.some(img => img.side === 'back');
+
+      case 3: // Documents (OPTIONAL)
+        // Only validate if they uploaded one side but not the other
+        const aadhaarImages = formData.aadhaarImages || [];
+        const hasFront = aadhaarImages.some(img => img.side === 'front');
+        const hasBack = aadhaarImages.some(img => img.side === 'back');
         
-      //   if (!hasFront || !hasBack) {
-      //     newErrors.aadhaarImages = 'Both front and back sides of Aadhaar card are required';
-      //   }
-        
-      //   if (!formData.panImageUrl?.trim()) {
-      //     newErrors.panImageUrl = 'PAN card image is required';
-      //   }
-      //   break;
-     
-      // case 3:
-      //   if (!formData.bankAccounts || formData.bankAccounts.length === 0) {
-      //     newErrors.bankAccounts = 'At least one bank account is required';
-      //   } else {
-      //     const invalidAccounts = formData.bankAccounts.some(account => {
-      //       return !account.accountNumber?.trim() ||
-      //              !account.accountHolderName?.trim() ||
-      //              !account.mobile?.trim() ||
-      //              account.mobile.length !== 10 ||
-      //              !account.bankName?.trim() ||
-      //              !account.ifscCode?.trim() ||
-      //              !validateIFSC(account.ifscCode) ||
-      //              !account.branch?.trim();
-      //     });
+        if ((hasFront && !hasBack) || (!hasFront && hasBack)) {
+            newErrors.aadhaarImages = 'Please upload both sides if uploading Aadhaar';
+        }
+        // Pan is now fully optional, no check needed unless you want to check format
+        break;
 
-      //     if (invalidAccounts) {
-      //       newErrors.bankAccounts = 'Please fill all required fields correctly for all bank accounts';
-      //     }
-      //   }
-      //   break;
+      case 4: // Bank Details (OPTIONAL)
+        // If they started filling a bank account, make sure it's complete. 
+        // If array is empty or fields are empty, let it pass.
+        if (formData.bankAccounts && formData.bankAccounts.length > 0) {
+            const hasPartialData = formData.bankAccounts.some(acc => 
+                acc.accountNumber || acc.bankName || acc.ifscCode
+            );
+            
+            if (hasPartialData) {
+                const invalidAccounts = formData.bankAccounts.some(account => {
+                    return !account.accountNumber || !account.ifscCode || !account.bankName;
+                });
+                if (invalidAccounts) {
+                    newErrors.bankAccounts = 'Please complete bank details or remove the account';
+                }
+            }
+        }
+        break;
 
-      // case 4:
-      //   if (!formData.creditCards || formData.creditCards.length === 0) {
-      //     newErrors.creditCards = 'At least one credit card is required';
-      //   } else {
-      //     const invalidCards = formData.creditCards.some(card => {
-      //       const cardNumberDigits = card.cardNumber.replace(/\D/g, '');
-      //       return !card.bankName?.trim() ||
-      //              !card.cardHolderName?.trim() ||
-      //              !card.cardHolderMobile?.trim() ||
-      //              card.cardHolderMobile.length !== 10 ||
-      //              cardNumberDigits.length < 13 ||
-      //              !card.cvv?.trim() ||
-      //              card.cvv.length < 3 ||
-      //              !card.expiryDate?.trim() ||
-      //              !card.cardLimit ||
-      //              card.cardLimit <= 0 ||
-      //              !card.billGenerationDate?.trim() ||
-      //              !card.cardDueDate?.trim();
-      //     });
-
-      //     if (invalidCards) {
-      //       newErrors.creditCards = 'Please fill all required fields correctly for all credit cards';
-      //     }
-      //   }
-      //   break;
-
-      case 5:
+      case 5: // Confirmation
         if (!confirmed) {
-          toast.error('Please confirm that your information is accurate');
+          toast.error('Please confirm details');
           return false;
         }
         break;
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -403,45 +459,42 @@ export default function FormPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 -mt-4">
-        <div className="bg-card rounded-lg shadow-lg p-6 md:p-8">
+        <div className="bg-card rounded-lg shadow-lg p-4 md:p-4">
           <ProgressBar currentStep={currentStep} totalSteps={TOTAL_STEPS} />
 
-          {currentStep === 1 && (
-            <PersonalInfoStep
-              data={formData}
-              onChange={handleFieldChange}
-              errors={errors}
-            />
-          )}
-          {currentStep === 2 && (
-            <DocumentsStep
-              data={formData}
-              onChange={handleFieldChange}
-              errors={errors}
-            />
-          )}
-          {currentStep === 3 && (
-            <BankDetailsStep
-              data={formData}
-              onChange={handleFieldChange}
-              errors={errors}
-            />
-          )}
-          {currentStep === 4 && (
-            <CreditCardsStep
-              data={formData}
-              onChange={handleFieldChange}
-              errors={errors}
-            />
-          )}
-          {currentStep === 5 && (
-            <ReviewStep
-              data={formData}
-              onEdit={handleEditStep}
-              confirmed={confirmed}
-              onConfirmChange={setConfirmed}
-            />
-          )}
+{currentStep === 1 && (
+          <PersonalInfoStep data={formData} onChange={handleFieldChange} errors={errors} />
+        )}
+        {currentStep === 2 && (
+          <CreditCardsStep data={formData} onChange={handleFieldChange} errors={errors} />
+        )}
+        {currentStep === 3 && (
+            // Add a Header to say it's Optional
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                     <h2 className="text-xl font-bold">Documents</h2>
+                     <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">Optional</span>
+                </div>
+                <DocumentsStep data={formData} onChange={handleFieldChange} errors={errors} />
+            </div>
+        )}
+        {currentStep === 4 && (
+             <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                     <h2 className="text-xl font-bold">Bank Details</h2>
+                     <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">Optional</span>
+                </div>
+                <BankDetailsStep data={formData} onChange={handleFieldChange} errors={errors} />
+            </div>
+        )}
+        {currentStep === 5 && (
+          <ReviewStep 
+            data={formData} 
+            onEdit={handleEditStep} 
+            confirmed={confirmed} 
+            onConfirmChange={setConfirmed} 
+          />
+        )}
 
           <FormNavigation
             currentStep={currentStep}

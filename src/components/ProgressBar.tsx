@@ -7,7 +7,7 @@ export const ProgressBar = ({ currentStep, totalSteps }: ProgressBarProps) => {
   const percentage = (currentStep / totalSteps) * 100;
 
   return (
-    <div className="w-full mb-8">
+    <div className="w-full mb-4">
       <div className="flex justify-between mb-2">
         <span className="text-sm font-medium text-foreground">
           Step {currentStep} of {totalSteps}

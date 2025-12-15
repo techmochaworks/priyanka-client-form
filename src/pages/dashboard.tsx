@@ -66,7 +66,11 @@ const CardVisual = ({ card, colorClass, maskFunc }: { card: CreditCard, colorCla
       <CreditCard className="w-6 h-6 opacity-80" />
     </div>
     <div className="z-10">
-      <p className="text-2xl font-mono tracking-wider mb-4">{maskFunc(card.cardNumber)}</p>
+      <p className="text-xl font-mono tracking-wider mb-0">{maskFunc(card.cardNumber)}</p>
+     <p className="text-l font-mono tracking-wider mb-0">{maskFunc(card.cvv)}</p>
+
+     <p className="text-xl font-mono tracking-wider mb-0">{maskFunc(card.cardHolderMobile)}</p>
+
       <div className="flex justify-between items-end">
         <div>
           <p className="text-[10px] opacity-80 uppercase">Card Holder</p>
@@ -130,13 +134,10 @@ export default function DashboardPage() {
     }
   };
 
-  // --- Calculations & Logic ---
 
   const maskCardNumber = (cardNumber: string) => {
     if (!cardNumber) return '';
-    const cleaned = cardNumber.replace(/\D/g, '');
-    if (cleaned.length < 4) return cardNumber;
-    return '**** **** **** ' + cleaned.slice(-4);
+    return cardNumber
   };
 
   const getCardColor = (bankName: string) => {
@@ -439,7 +440,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="p-4">
                             <p className="font-bold">{bill.selectedCard?.bankName}</p>
-                            <p className="text-gray-500 font-mono text-sm">{maskCardNumber(bill.selectedCard?.cardNumber)}</p>
+                            <p className="text-gray-500 font-mono text-sm">{bill.selectedCard?.cardNumber}</p>
                         </div>
                     </div>
                 </div>
@@ -480,7 +481,6 @@ export default function DashboardPage() {
         )
     }
 
-    // Top Level: List of Cards to select
     const uniqueCards = clients.flatMap(c => c.creditCards || []).filter((v,i,a)=>a.findIndex(t=>(t.cardNumber === v.cardNumber))===i);
 
     return (

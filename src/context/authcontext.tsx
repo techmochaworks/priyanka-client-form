@@ -5,16 +5,19 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  GoogleAuthProvider, // Import this
+  signInWithPopup     // Import this
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore'; // Import getDoc
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signup: (email: string, password: string, name: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  googleSignIn: () => Promise<void>; // Add to interface
   logout: () => Promise<void>;
 }
 
@@ -35,7 +38,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signup = async (email: string, password: string, name: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    // Store user data in Firestore
     await setDoc(doc(db, 'users', userCredential.user.uid), {
       name,
       email,
@@ -47,6 +49,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
+  // New Google Sign In Function
+  const googleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Check if user exists in Firestore, if not, create them
+    const docRef = doc(db, 'users', user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      await setDoc(docRef, {
+        name: user.displayName || 'User',
+        email: user.email,
+        createdAt: new Date().toISOString(),
+      });
+    }
+  };
+
   const logout = async () => {
     await signOut(auth);
   };
@@ -56,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loading,
     signup,
     login,
+    googleSignIn, // Export function
     logout,
   };
 

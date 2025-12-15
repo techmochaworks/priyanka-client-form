@@ -1,11 +1,26 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CreditCard as CreditCardType, FormData } from '@/types/form';
-import { formatCardNumber, formatExpiry, getCardType } from '@/lib/validation';
-import { CreditCard, Plus, Trash2, Eye, EyeOff, Building2, User, Phone, Calendar } from 'lucide-react';
-import { useState } from 'react';
+import { Plus, Trash2, CreditCard } from 'lucide-react';
+
+// Types
+interface CreditCardType {
+  cardNumber: string;
+  cvv: string;
+  expiryDate: string;
+  cardLimit: number;
+  bankName: string;
+  cardType: string;
+  cardHolderName: string;
+  cardHolderMobile: string;
+  cardDueDate: string;
+  billGenerationDate: string;
+}
+
+interface FormData {
+  creditCards?: CreditCardType[];
+}
 
 interface CreditCardsStepProps {
   data: Partial<FormData>;
@@ -13,9 +28,31 @@ interface CreditCardsStepProps {
   errors: Partial<Record<keyof FormData, string>>;
 }
 
-export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps) => {
-  const [showCVV, setShowCVV] = useState<Record<number, boolean>>({});
-  
+// Utility functions
+const formatCardNumber = (value: string): string => {
+  const cleaned = value.replace(/\D/g, '');
+  const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
+  return formatted;
+};
+
+const formatExpiry = (value: string): string => {
+  const cleaned = value.replace(/\D/g, '');
+  if (cleaned.length >= 2) {
+    return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4);
+  }
+  return cleaned;
+};
+
+const getCardType = (cardNumber: string): string => {
+  const cleaned = cardNumber.replace(/\s/g, '');
+  if (cleaned.startsWith('4')) return 'Visa';
+  if (cleaned.startsWith('5')) return 'Mastercard';
+  if (cleaned.startsWith('3')) return 'Amex';
+  return 'Credit';
+};
+
+export  function CreditCardsStep({ data, onChange, errors }: CreditCardsStepProps) {
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const cards = data.creditCards || [];
 
   const addCard = () => {
@@ -52,262 +89,218 @@ export const CreditCardsStep = ({ data, onChange, errors }: CreditCardsStepProps
     onChange('creditCards', updatedCards);
   };
 
-  const toggleShowCVV = (index: number) => {
-    setShowCVV(prev => ({ ...prev, [index]: !prev[index] }));
-  };
-
-  const getCardDisplayName = (card: CreditCardType, index: number) => {
-    if (card.bankName && card.bankName !== '') {
-      return card.bankName;
-    }
-    return `Card ${index + 1}`;
-  };
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">Credit Card Details</h2>
-        <p className="text-muted-foreground">
-          Add your credit card information (minimum 1 card required)
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        {cards.map((card, index) => (
-          <div key={index} className="p-4 border-2 border-border rounded-lg bg-card relative">
-            {cards.length > 1 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeCard(index)}
-                className="absolute top-2 right-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
-
-            <div className="flex items-center gap-2 mb-4">
-              <CreditCard className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold">{getCardDisplayName(card, index)}</h3>
-              {card.cardType !== 'Unknown' && (
-                <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
-                  {card.cardType}
-                </span>
-              )}
+  const CardPreview = ({ 
+    card, 
+    index,
+    isFlipped 
+  }: { 
+    card: CreditCardType; 
+    index: number;
+    isFlipped: boolean;
+  }) => (
+    <div style={{ perspective: '1000px' }} className="w-full h-52 sm:h-56">
+      <div 
+        className="relative w-full h-full transition-all duration-700"
+        style={{
+          transformStyle: 'preserve-3d',
+          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+        }}
+      >
+        {/* Front of Card */}
+        <div 
+          className="absolute inset-0 rounded-xl shadow-2xl p-5 sm:p-6 bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white"
+          style={{ backfaceVisibility: 'hidden' }}
+        >
+          {/* Chip */}
+          <div className="w-10 h-8 sm:w-12 sm:h-10 bg-gradient-to-br from-yellow-200 to-yellow-400 rounded mb-3 sm:mb-4"></div>
+          
+          {/* Editable Bank Name */}
+          <input
+            type="text"
+            value={card.bankName || ''}
+            onChange={(e) => updateCard(index, 'bankName', e.target.value)}
+            placeholder="BANK NAME"
+            className="text-xs sm:text-sm opacity-80 mb-3 sm:mb-4 bg-transparent border-none outline-none w-full text-white placeholder-white/50 focus:opacity-100 uppercase"
+          />
+          
+          {/* Editable Card Number */}
+          <input
+            type="text"
+            value={card.cardNumber || ''}
+            onChange={(e) => updateCard(index, 'cardNumber', e.target.value)}
+            onFocus={() => setFocusedField(`number-${index}`)}
+            onBlur={() => setFocusedField(null)}
+            placeholder="#### #### #### ####"
+            maxLength={19}
+            className="text-lg sm:text-xl font-mono tracking-wider mb-4 sm:mb-6 bg-transparent border-none outline-none w-full text-white placeholder-white/30 focus:ring-1 focus:ring-white/30 rounded px-1"
+          />
+          
+          <div className="flex justify-between items-end">
+            <div className="flex-1 mr-3 sm:mr-4">
+              <div className="text-[10px] sm:text-xs opacity-70 mb-1">Card Holder</div>
+              <input
+                type="text"
+                value={card.cardHolderName || ''}
+                onChange={(e) => updateCard(index, 'cardHolderName', e.target.value.toUpperCase())}
+                placeholder="YOUR NAME"
+                className="text-xs sm:text-sm font-medium bg-transparent border-none outline-none w-full text-white placeholder-white/30 focus:ring-1 focus:ring-white/30 rounded px-1 uppercase"
+              />
             </div>
-
-            <div className="grid gap-4">
-              <div>
-                <Label htmlFor={`bankName-${index}`} className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  Bank Name <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  value={card.bankName}
-                  onValueChange={(value) => updateCard(index, 'bankName', value)}
-                >
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue placeholder="Select bank" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HDFC Bank">HDFC Bank</SelectItem>
-                    <SelectItem value="ICICI Bank">ICICI Bank</SelectItem>
-                    <SelectItem value="SBI">State Bank of India</SelectItem>
-                    <SelectItem value="Axis Bank">Axis Bank</SelectItem>
-                    <SelectItem value="Kotak Mahindra Bank">Kotak Mahindra Bank</SelectItem>
-                    <SelectItem value="IDFC First Bank">IDFC First Bank</SelectItem>
-                    <SelectItem value="Yes Bank">Yes Bank</SelectItem>
-                    <SelectItem value="IndusInd Bank">IndusInd Bank</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {card.bankName === 'Other' && (
-                <div>
-                  <Label htmlFor={`customBankName-${index}`}>
-                    Enter Bank Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id={`customBankName-${index}`}
-                    value={card.bankName || ''}
-                    onChange={(e) => updateCard(index, 'bankName', e.target.value)}
-                    placeholder="Enter your bank name"
-                    className="mt-1.5"
-                  />
-                </div>
-              )}
-
-              <div>
-                <Label htmlFor={`cardHolderName-${index}`} className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Card Holder Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id={`cardHolderName-${index}`}
-                  value={card.cardHolderName || ''}
-                  onChange={(e) => updateCard(index, 'cardHolderName', e.target.value)}
-                  placeholder="Name as on card"
-                  className="mt-1.5"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor={`cardHolderMobile-${index}`} className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  Card Holder Mobile <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id={`cardHolderMobile-${index}`}
-                  value={card.cardHolderMobile || ''}
-                  onChange={(e) => updateCard(index, 'cardHolderMobile', e.target.value.replace(/\D/g, '').substring(0, 10))}
-                  placeholder="10-digit mobile number"
-                  maxLength={10}
-                  className="mt-1.5"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor={`cardNumber-${index}`}>
-                  Card Number <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id={`cardNumber-${index}`}
-                  value={card.cardNumber}
-                  onChange={(e) => updateCard(index, 'cardNumber', e.target.value)}
-                  placeholder="XXXX-XXXX-XXXX-XXXX"
-                  maxLength={19}
-                  className="mt-1.5"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor={`cvv-${index}`}>
-                    CVV <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="relative mt-1.5">
-                    <Input
-                      id={`cvv-${index}`}
-                      type={showCVV[index] ? 'text' : 'password'}
-                      value={card.cvv}
-                      onChange={(e) => updateCard(index, 'cvv', e.target.value.replace(/\D/g, '').substring(0, 4))}
-                      placeholder="XXX"
-                      maxLength={4}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => toggleShowCVV(index)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showCVV[index] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor={`expiry-${index}`}>
-                    Expiry Date <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id={`expiry-${index}`}
-                    value={card.expiryDate}
-                    onChange={(e) => updateCard(index, 'expiryDate', formatExpiry(e.target.value))}
-                    placeholder="MM/YY"
-                    maxLength={5}
-                    className="mt-1.5"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor={`cardLimit-${index}`}>
-                  Card Limit (₹) <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id={`cardLimit-${index}`}
-                  type="number"
-                  value={card.cardLimit || ''}
-                  onChange={(e) => updateCard(index, 'cardLimit', parseFloat(e.target.value) || 0)}
-                  placeholder="Enter card limit"
-                  className="mt-1.5"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor={`billGenerationDate-${index}`} className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Bill Generation Date <span className="text-destructive">*</span>
-                  </Label>
-                  <Select
-                    value={card.billGenerationDate || ''}
-                    onValueChange={(value) => updateCard(index, 'billGenerationDate', value)}
-                  >
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Select date" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                        <SelectItem key={day} value={day.toString()}>
-                          {day}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor={`cardDueDate-${index}`} className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Card Due Date <span className="text-destructive">*</span>
-                  </Label>
-                  <Select
-                    value={card.cardDueDate || ''}
-                    onValueChange={(value) => updateCard(index, 'cardDueDate', value)}
-                  >
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Select date" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                        <SelectItem key={day} value={day.toString()}>
-                          {day}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            <div>
+              <div className="text-[10px] sm:text-xs opacity-70 mb-1">Expires</div>
+              <input
+                type="text"
+                value={card.expiryDate || ''}
+                onChange={(e) => updateCard(index, 'expiryDate', formatExpiry(e.target.value))}
+                placeholder="MM/YY"
+                maxLength={5}
+                className="text-xs sm:text-sm font-medium bg-transparent border-none outline-none w-14 sm:w-16 text-white placeholder-white/30 focus:ring-1 focus:ring-white/30 rounded px-1"
+              />
             </div>
           </div>
-        ))}
+        </div>
 
-        {cards.length < 10 && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={addCard}
-            className="w-full"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Another Card
-          </Button>
-        )}
-
-        {errors.creditCards && (
-          <p className="text-sm text-destructive">{errors.creditCards}</p>
-        )}
-      </div>
-
-      <div className="p-4 bg-accent rounded-lg">
-        <p className="text-sm text-accent-foreground">
-          <strong>Security Note:</strong> Your card information is securely stored and encrypted. 
-          We never share your card details with any third party.
-        </p>
+        {/* Back of Card */}
+        <div 
+          className="absolute inset-0 rounded-xl shadow-2xl bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white"
+          style={{ 
+            backfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)'
+          }}
+        >
+          <div className="w-full h-10 sm:h-12 bg-black mt-5 sm:mt-6"></div>
+          <div className="px-5 sm:px-6 mt-5 sm:mt-6">
+            <div className="text-[10px] sm:text-xs opacity-70 mb-1">CVV</div>
+            <input
+              type="text"
+              value={card.cvv || ''}
+              onChange={(e) => updateCard(index, 'cvv', e.target.value.replace(/\D/g, ''))}
+              onFocus={() => setFocusedField(`cvv-${index}`)}
+              onBlur={() => setFocusedField(null)}
+              placeholder="***"
+              maxLength={4}
+              className="bg-white text-black px-3 py-2 rounded text-right font-mono w-full outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="mt-5 sm:mt-6 text-[10px] sm:text-xs opacity-50">Customer Signature</div>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+        <div className="text-center mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold flex items-center justify-center gap-2">
+            <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
+            Add Credit Card
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">Enter your card details</p>
+        </div>
+
+        <div className="space-y-6">
+          {cards.map((card, index) => (
+            <div key={index} className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="p-2 sm:p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold">Card {index + 1}</h3>
+                  {cards.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeCard(index)}
+                      className="h-8"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* The Interactive Visual Card */}
+                <div className="mb-6">
+                  <CardPreview 
+                    card={card} 
+                    index={index}
+                    isFlipped={focusedField === `cvv-${index}`}
+                  />
+                </div>
+
+                {/* Additional Form Fields */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm">Mobile Number</Label>
+                    <Input
+                      type="tel"
+                      value={card.cardHolderMobile || ''}
+                      onChange={(e) => updateCard(index, 'cardHolderMobile', e.target.value.replace(/\D/g, ''))}
+                      placeholder="10 digit mobile"
+                      maxLength={10}
+                      className="h-11"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm">Card Limit (₹)</Label>
+                    <Input
+                      type="number"
+                      value={card.cardLimit || ''}
+                      onChange={(e) => updateCard(index, 'cardLimit', e.target.value)}
+                      placeholder="Credit limit"
+                      className="h-11"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm">Bill Date</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={card.billGenerationDate || ''}
+                        onChange={(e) => updateCard(index, 'billGenerationDate', e.target.value)}
+                        placeholder="Day"
+                        className="h-11"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-sm">Due Date</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={card.cardDueDate || ''}
+                        onChange={(e) => updateCard(index, 'cardDueDate', e.target.value)}
+                        placeholder="Day"
+                        className="h-11"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {cards.length < 5 && (
+            <Button
+              type="button"
+              onClick={addCard}
+              className="w-full h-12 text-base"
+              variant="outline"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add Another Card
+            </Button>
+          )}
+
+          {errors.creditCards && (
+            <div className="text-red-500 text-sm px-4">
+              {errors.creditCards}
+            </div>
+          )}
+        </div>
+      </div>
+  );
+}
